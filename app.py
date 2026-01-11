@@ -1,38 +1,73 @@
+# ---- PATH FIX (CRITICAL FOR STREAMLIT CLOUD) ----
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
+
+# ---- STANDARD IMPORTS ----
 import streamlit as st
 import pandas as pd
+
+# ---- LOCAL MODULE IMPORTS ----
 from model.train import train_model
+from model.attack import poison_data, evade_text
+from model.defense import sanitize_data, confidence_filter
 
-
-st.set_page_config(page_title="Adversarial ML Lab", layout="centered")
+# ---- STREAMLIT CONFIG ----
+st.set_page_config(
+    page_title="Adversarial ML Attack & Defense Lab",
+    layout="centered"
+)
 
 st.title("🛡️ Adversarial ML Attack & Defense Lab")
+st.caption("Demonstrating adversarial attacks against ML-based security systems")
 
-df = pd.read_csv("data/dataset.csv")
+# ---- LOAD DATASET ----
+DATA_PATH = os.path.join("data", "dataset.csv")
 
-mode = st.selectbox("Training Mode", ["Clean", "Poisoned"])
+df = pd.read_csv(DATA_PATH)
 
-if mode == "Poisoned":
+# ---- TRAINING MODE ----
+mode = st.selectbox(
+    "Select Training Mode",
+    ["Clean Training", "Poisoned Training"]
+)
+
+if mode == "Poisoned Training":
     df = poison_data(df)
 
+# ---- DEFENSIVE SANITIZATION ----
 df = sanitize_data(df)
 
+# ---- TRAIN MODEL ----
 model, vectorizer = train_model(df["text"], df["label"])
 
-text = st.text_input("Enter text", "free money now")
-use_evasion = st.checkbox("Apply Evasion Attack")
+# ---- USER INPUT ----
+user_text = st.text_input(
+    "Enter text to analyze",
+    value="free money now"
+)
 
-if use_evasion:
-    text = evade_text(text)
+apply_evasion = st.checkbox("Apply Evasion Attack")
 
+if apply_evasion:
+    user_text = evade_text(user_text)
+
+# ---- ANALYSIS ----
 if st.button("Analyze"):
-    X = vectorizer.transform([text])
-    prob = model.predict_proba(X)[0].max()
-    pred = model.predict(X)[0]
+    X_test = vectorizer.transform([user_text])
+    probabilities = model.predict_proba(X_test)[0]
+    confidence = max(probabilities)
+    prediction = model.predict(X_test)[0]
 
-    st.write("Prediction:", "🚨 Malicious" if pred == 1 else "✅ Benign")
-    st.write("Confidence:", round(prob, 2))
-    st.write(confidence_filter(prob))
+    st.subheader("Analysis Result")
+
+    if prediction == 1:
+        st.error("🚨 Malicious Content Detected")
+    else:
+        st.success("✅ Benign Content")
+
+    st.write("**Confidence:**", round(confidence, 2))
+    st.write(confidence_filter(confidence))
