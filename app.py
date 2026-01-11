@@ -1,9 +1,11 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import streamlit as st
 import pandas as pd
-
 from model.train import train_model
-from model.attack import poison_data, evade_text
-from model.defense import sanitize_data, confidence_filter
+
 
 st.set_page_config(page_title="Adversarial ML Lab", layout="centered")
 
