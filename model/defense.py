@@ -5,3 +5,4 @@ def confidence_filter(confidence):
     if confidence < 0.6:
         return "⚠️ Low confidence – Manual review recommended"
     return "✅ High confidence prediction"
+
