@@ -1,15 +1,17 @@
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.linear_model import LogisticRegression
-
+import numpy as np
 
 def train_model(texts, labels):
     """
-    Trains a simple ML classifier for security text detection.
+    Simple probabilistic classifier without sklearn.
     """
-    vectorizer = CountVectorizer()
-    X = vectorizer.fit_transform(texts)
+    keywords = ["free", "win", "offer", "cash", "urgent", "click", "money"]
 
-    model = LogisticRegression(max_iter=200)
-    model.fit(X, labels)
+    def predict_proba(text):
+        score = 0
+        for k in keywords:
+            if k in text.lower():
+                score += 1
+        prob = min(score / len(keywords), 1.0)
+        return [1 - prob, prob]
 
-    return model, vectorizer
+    return predict_proba
